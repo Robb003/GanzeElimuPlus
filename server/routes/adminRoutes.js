@@ -1,41 +1,61 @@
+
 const express = require('express');
 const router = express.Router();
-const { 
-  getLeaderboard, 
-  executeDisbursement, 
-  executeBatchDisbursement,
-  configureBursaryCycle
-} = require('../controllers/adminController');
-const { protect, authorizeRoles } = require('../middleware/authMiddleware');
 
-//  ADMIN LEADERBOARD GATEWAY: Pulls clerk-verified students sorted by vulnerability points
-// Endpoint: GET /api/admin/leaderboard
+const {
+  createSchool,
+  getLeaderboard,
+  executeBatchDisbursement,
+  configureBursaryCycle,
+  simulatePaymentConfirmation
+} = require('../controllers/adminController');
+
+const {
+  protect,
+  authorizeRoles
+} = require('../middleware/authMiddleware');
+
+// 1. Register a school
+// POST /api/admin/schools
+router.post(
+  '/schools',
+  protect,
+  authorizeRoles('admin'),
+  createSchool
+);
+
+// 2. Fetch the application leaderboard
+// GET /api/admin/getleaderboard
 router.get(
-  '/getleaderboard', 
-  protect, 
-  authorizeRoles('admin'), 
+  '/getleaderboard',
+  protect,
+  authorizeRoles('admin'),
   getLeaderboard
 );
 
-// INDIVIDUAL DISBURSEMENT GATEWAY: Releases funds to an individual student's school account
-// Endpoint: POST /api/admin/disburse/:applicationId
+// 3. Configure the bursary cycle
+// POST /api/admin/set-cycle
 router.post(
-  '/disburse/:applicationId', 
-  protect, 
-  authorizeRoles('admin'), 
-  executeDisbursement,
+  '/set-cycle',
+  protect,
+  authorizeRoles('admin'),
+  configureBursaryCycle
 );
 
-router.post('/set-cycle', protect, authorizeRoles('admin'), configureBursaryCycle);
-
-
-// BATCH DISBURSEMENT GATEWAY: Loops through a compilation array of IDs to pay schools in bulk
-// Endpoint: POST /api/admin/disburse-batch
+// 4. Initiate bulk disbursement
+// POST /api/admin/disburse-batch
 router.post(
-  '/disburse-batch', 
-  protect, 
-  authorizeRoles('admin'), 
+  '/disburse-batch',
+  protect,
+  authorizeRoles('admin'),
   executeBatchDisbursement
+);
+// TESTING ONLY  simulate a payment confirmation in development.
+router.post(
+  '/test-confirm-payment/:paymentReference',
+  protect,
+  authorizeRoles('admin'),
+  simulatePaymentConfirmation
 );
 
 module.exports = router;

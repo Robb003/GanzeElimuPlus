@@ -1,58 +1,107 @@
+
 const express = require('express');
 const router = express.Router();
-const { 
-  submitApplication, 
-  getReviewQueue, 
-  processVerification 
+
+const {
+  submitApplication,
+  getReviewQueue,
+  processVerification,
+  approveApplication,
+  getBoardReviewQueue
 } = require('../controllers/applicationController');
+
 const checkApplicationWindow = require('../middleware/windowMiddleware');
-const { protect, authorizeRoles } = require('../middleware/authMiddleware');
-const Application = require('../models/Application');
+const {
+  protect,
+  authorizeRoles
+} = require('../middleware/authMiddleware');
+
 const Transaction = require('../models/Transaction');
 
-//  APPLICANT GATEWAY: Only logged-in applicants or trusted agents can submit forms
-// Endpoint: POST /api/applications/submit
+// APPLICANT GATEWAY
+// POST /api/applications/submit
+// Only authenticated applicants may submit through this endpoint.
+// Agents require a separate, explicitly authorized workflow.
 router.post(
-  '/submit', 
-  protect, 
-  authorizeRoles('applicant', 'agent'), 
+  '/submit',
+  protect,
+  authorizeRoles('applicant'),
   checkApplicationWindow,
   submitApplication
 );
 
-// CLERK REVIEW QUEUE GATEWAY: Only clerks and admins can pull the blind review queue data
-// Endpoint: GET /api/applications/review-queue
+// CLERK REVIEW QUEUE
+// GET /api/applications/review-queue
+// Clerks and authorized admins can view the score-blind queue.
 router.get(
-  '/review-queue', 
-  protect, 
-  authorizeRoles('clerk', 'admin'), 
+  '/review-queue',
+  protect,
+  authorizeRoles('clerk', 'admin'),
   getReviewQueue
 );
 
-// CLERK AUDIT GATEWAY: Only clerks can process individual verification approvals/rejections
-// Endpoint: PUT /api/applications/:id/verify
+// DOCUMENT VERIFICATION
+// PUT /api/applications/:id/verify
+// Only authenticated clerks can verify submitted applications.
+// This endpoint must not approve or disburse bursaries.
 router.put(
-  '/:id/verify', 
-  protect, 
-  authorizeRoles('clerk'), 
+  '/:id/verify',
+  protect,
+  authorizeRoles('clerk'),
   processVerification
 );
+router.get(
+  '/board-queue',
+  protect,
+  authorizeRoles('board', 'admin'),
+  getBoardReviewQueue
+);
 
-//PUBLIC TRANSPARENCY LEDGER ENDPOINT (Open to the whole community - No login required)
-// Endpoint: GET /api/applications/public-ledger
+
+router.put(
+  '/:id/approve',
+  protect,
+  authorizeRoles('board', 'admin'),
+  approveApplication
+);
+
+
+// PUBLIC TRANSPARENCY LEDGER
+// GET /api/applications/public-ledger
+// Public output must contain only explicitly approved information.
+// Never return applicant IDs, identity documents, or private details.
 router.get('/public-ledger', async (req, res) => {
   try {
-    const totalTransactions = await Transaction.find()
+    const transactions = await Transaction.find()
+      .select('amountDisbursed createdAt schoolId')
       .populate('schoolId', 'schoolName category')
-      .select('amountDisbursed paymentReference createdAt');
+      .sort({ createdAt: -1 })
+      .lean();
 
-    res.json({
-      message: "Public transparency ledger fetched successfully for the community.",
-      count: totalTransactions.length,
-      data: totalTransactions
+    // Explicitly construct the public response rather than returning
+    // complete database records.
+    const publicTransactions = transactions.map((transaction) => ({
+      school: transaction.schoolId
+        ? {
+            schoolName: transaction.schoolId.schoolName,
+            category: transaction.schoolId.category
+          }
+        : null,
+      amountDisbursed: transaction.amountDisbursed,
+      date: transaction.createdAt
+    }));
+
+    return res.status(200).json({
+      message: 'Public transparency ledger fetched successfully.',
+      count: publicTransactions.length,
+      data: publicTransactions
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Public ledger error:', error);
+
+    return res.status(500).json({
+      message: 'Unable to retrieve the public transparency ledger.'
+    });
   }
 });
 

@@ -8,57 +8,108 @@ const generateToken = (id) => {
 };
 
 //  Register logic endpoint
+
 exports.registerUser = async (req, res) => {
-  const { phoneNumber, password, fullName, nationalID, birthCertificateNumber, ward, village } = req.body;
+  const {
+    phoneNumber,
+    password,
+    role,
+    fullName,
+    nationalID,
+    birthCertificateNumber,
+    ward,
+    village
+  } = req.body;
 
   try {
-    // Enforce that at least one ID method is provided
-    if (!nationalID && !birthCertificateNumber) {
-      return res.status(400).json({ 
-        message: 'Registration failed. You must provide either a National ID or a Birth Certificate number.' 
+    // Require exactly one identification document
+    const hasNationalID = Boolean(nationalID?.trim());
+    const hasBirthCertificate = Boolean(birthCertificateNumber?.trim());
+
+    if (hasNationalID === hasBirthCertificate) {
+      return res.status(400).json({
+        message:
+          'Provide exactly one: National ID or Birth Certificate number.'
       });
     }
 
-    // Double check if account identifier already exists
-    const userExists = await User.findOne({ phoneNumber });
-    if (userExists) {
-      return res.status(400).json({ message: 'A profile with this phone number already exists.' });
+    // Validate required fields
+    if (
+      !phoneNumber?.trim() ||
+      !password ||
+      !fullName?.trim() ||
+      !ward ||
+      !village?.trim()
+    ) {
+      return res.status(400).json({
+        message: 'Please provide all required registration fields.'
+      });
     }
 
-    // Encrypt and Hash the raw user password using Bcrypt
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
-
-    // Commit the fresh user record to MongoDB cluster
-    const user = await User.create({
-      phoneNumber,
-      passwordHash,
-      role: 'applicant', // Hardcoded default to prevent privilege escalation attacks
-      profile: {
-        fullName,
-        nationalID: nationalID || null,
-        birthCertificateNumber: birthCertificateNumber || null,
-        ward,
-        village
-      }
+    // Public registration must always create an applicant
+    const userExists = await User.findOne({
+      $or: [
+        { phoneNumber: phoneNumber.trim() },
+        ...(hasNationalID
+          ? [{ 'profile.nationalID': nationalID.trim() }]
+          : []),
+        ...(hasBirthCertificate
+          ? [{ 'profile.birthCertificateNumber': birthCertificateNumber.trim() }]
+          : [])
+      ]
     });
 
-    if (user) {
-      res.status(201).json({
-        _id: user._id,
-        phoneNumber: user.phoneNumber,
-        role: user.role,
-        fullName: user.profile.fullName,
-        token: generateToken(user._id)
+    if (userExists) {
+      return res.status(409).json({
+        message: 'Phone number or identification document is already registered.'
       });
-    } else {
-      res.status(400).json({ message: 'Invalid user registration data provided.' });
     }
 
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // Only include the identification field provided.
+    
+    const profile = {
+      fullName: fullName.trim(),
+      ward,
+      village: village.trim()
+    };
+
+    if (hasNationalID) {
+      profile.nationalID = nationalID.trim();
+    } else {
+      profile.birthCertificateNumber = birthCertificateNumber.trim();
+    }
+
+    const user = await User.create({
+      phoneNumber: phoneNumber.trim(),
+      passwordHash,
+      role: role || "applicant",
+      profile
+    });
+
+    return res.status(201).json({
+      _id: user._id,
+      phoneNumber: user.phoneNumber,
+      role: user.role,
+      fullName: user.profile.fullName,
+      token: generateToken(user._id)
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    if (error.code === 11000) {
+      return res.status(409).json({
+        message: 'This phone number or identification document is already registered.'
+      });
+    }
+
+    console.error('Registration error:', error.message);
+
+    return res.status(500).json({
+      message: 'Registration failed due to a server error.'
+    });
   }
 };
+
 
 // Login logic endpoint
 exports.loginUser = async (req, res) => {
