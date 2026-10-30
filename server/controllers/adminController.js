@@ -387,6 +387,60 @@ exports.configureBursaryCycle = async (req, res) => {
   }
 };
 
+/*
+ * GET THE ACTIVE BURSARY CYCLE
+ * Used by the applicant dashboard to display
+ * the application window status and dates.
+ */
+exports.getActiveBursaryCycle = async (req, res) => {
+  try {
+    const period = await Period.findOne({
+      isActive: true
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // No active cycle has been configured.
+    if (!period) {
+      return res.status(200).json({
+        message: 'No active bursary cycle is configured.',
+        data: null,
+        applicationWindowOpen: false
+      });
+    }
+
+    const now = new Date();
+
+    const openingDate = new Date(period.openingDate);
+    const closingDate = new Date(period.closingDate);
+
+    // The application window must be within both dates.
+    const applicationWindowOpen =
+      period.isActive &&
+      now >= openingDate &&
+      now <= closingDate;
+
+    return res.status(200).json({
+      message: 'Active bursary cycle retrieved successfully.',
+      data: {
+        _id: period._id,
+        cycleName: period.cycleName,
+        openingDate: period.openingDate,
+        closingDate: period.closingDate,
+        isActive: period.isActive,
+        applicationWindowOpen
+      }
+    });
+  } catch (error) {
+    console.error('Get active bursary cycle error:', error);
+
+    return res.status(500).json({
+      message: 'Unable to retrieve the active bursary cycle.'
+    });
+  }
+};
+
+
 /**
  * TESTING ONLY.
  * Simulates payment confirmation in development.

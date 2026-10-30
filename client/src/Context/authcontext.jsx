@@ -9,9 +9,9 @@ import {
 import {
   registerUser as registerUserService,
   loginUser as loginUserService,
-} from '../services/authService';
+} from '../Service/api';
 
-import API from '../services/authService';
+import API from '../Service/api';
 
 const AuthContext = createContext(null);
 

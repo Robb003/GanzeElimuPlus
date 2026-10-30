@@ -62,4 +62,21 @@ export const loginUser = async ({ phoneNumber, password }) => {
   return response.data;
 };
 
+
+//getting a clycle period
+export const getActiveBursaryCycle = async () => {
+  const response = await API.get('/admin/active-cycle');
+  return response.data;
+};
+//Submitting an application api
+export const submitApplication = async (applicationData) => {
+  const response = await API.post(
+    '/applications/submit',
+    applicationData
+  );
+
+  return response.data;
+};
+
+
 export default API;

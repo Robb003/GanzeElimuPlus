@@ -1,0 +1,23 @@
+{
+  "name": "ElimuPlus",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+  "dev": "concurrently -k -n SERVER,CLIENT \"pnpm --dir server dev\" \"pnpm --dir client dev\""
+    },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^11.9.0",
+      "onFail": "download"
+    }
+  },
+  "type": "module",
+  "devDependencies": {
+    "concurrently": "^10.0.6"
+  }
+}

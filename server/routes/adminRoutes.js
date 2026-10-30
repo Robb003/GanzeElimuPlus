@@ -7,6 +7,7 @@ const {
   getLeaderboard,
   executeBatchDisbursement,
   configureBursaryCycle,
+  getActiveBursaryCycle,
   simulatePaymentConfirmation
 } = require('../controllers/adminController');
 
@@ -40,6 +41,11 @@ router.post(
   protect,
   authorizeRoles('admin'),
   configureBursaryCycle
+);
+router.get(
+  '/active-cycle',
+  protect,
+  getActiveBursaryCycle
 );
 
 // 4. Initiate bulk disbursement
