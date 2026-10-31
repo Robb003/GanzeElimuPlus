@@ -6,9 +6,6 @@ const APIBaseUrl = `${BackendBaseUrl}/api`;
 
 const API = axios.create({
   baseURL: APIBaseUrl,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 // Attach the saved token to protected API requests
@@ -68,7 +65,9 @@ export const getActiveBursaryCycle = async () => {
   const response = await API.get('/admin/active-cycle');
   return response.data;
 };
+
 //Submitting an application api
+// Submitting an application API
 export const submitApplication = async (applicationData) => {
   const response = await API.post(
     '/applications/submit',

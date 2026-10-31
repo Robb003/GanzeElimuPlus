@@ -9,6 +9,9 @@ const {
   approveApplication,
   getBoardReviewQueue
 } = require('../controllers/applicationController');
+const {
+  uploadApplicationDocuments,
+} = require('../middleware/uploadMiddleware');
 
 const checkApplicationWindow = require('../middleware/windowMiddleware');
 const {
@@ -27,6 +30,7 @@ router.post(
   protect,
   authorizeRoles('applicant'),
   checkApplicationWindow,
+  uploadApplicationDocuments,
   submitApplication
 );
 

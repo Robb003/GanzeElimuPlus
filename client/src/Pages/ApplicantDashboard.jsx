@@ -8,6 +8,7 @@ import StatCard from '../Components/Applicant/StatCard';
 import ApplicationProgress from '../Components/Applicant/ApplicationProgress';
 import RecentNotifications from '../Components/Applicant/RecentNotifications';
 import ApplicationForm from '../Components/Applicant/ApplicationForm';
+import ApplicationCountdown from '../Components/ApplicationCountdown'
 
 import { getActiveBursaryCycle } from '../Service/api';
 export default function ApplicantDashboard() {
@@ -252,8 +253,12 @@ export default function ApplicantDashboard() {
               My Application
             </h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              {<ApplicationForm />}
+                  Complete the application form and upload the required documents.
             </p>
+
+            <div className="mt-6">
+              <ApplicationForm />
+            </div>
           </section>
         );
 
@@ -335,6 +340,9 @@ export default function ApplicantDashboard() {
               notifications={notifications}
               onViewAll={() => handleNavigation('notifications')}
             />
+            <div className="mt-5">
+              <ApplicationCountdown />
+            </div>
           </>
         );
     }

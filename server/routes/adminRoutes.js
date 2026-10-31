@@ -44,7 +44,7 @@ router.post(
 );
 router.get(
   '/active-cycle',
-  protect,
+  
   getActiveBursaryCycle
 );
 
