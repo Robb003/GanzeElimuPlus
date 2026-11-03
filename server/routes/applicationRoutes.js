@@ -4,6 +4,7 @@ const router = express.Router();
 
 const {
   submitApplication,
+  getMyApplication,
   getReviewQueue,
   processVerification,
   approveApplication,
@@ -32,6 +33,12 @@ router.post(
   checkApplicationWindow,
   uploadApplicationDocuments,
   submitApplication
+);
+router.get(
+  '/my-application',
+  protect,
+  authorizeRoles('applicant'),
+  getMyApplication
 );
 
 // CLERK REVIEW QUEUE

@@ -77,18 +77,12 @@ export default function ApplicantDashboard() {
       title: 'My Application',
       subtitle: 'View and manage your bursary application.',
     },
-    documents: {
-      title: 'My Documents',
-      subtitle: 'Track your required supporting documents.',
-    },
-    school: {
-      title: 'School Details',
-      subtitle: 'Review your selected school information.',
+
     },
     notifications: {
       title: 'Notifications',
       subtitle: 'Stay updated on your bursary application.',
-    },
+    };
   };
 
   const currentPage = pageTitles[activePage] || pageTitles.overview;
@@ -259,6 +253,19 @@ export default function ApplicantDashboard() {
             <div className="mt-6">
               <ApplicationForm />
             </div>
+            <div className="mt-6 border-t border-slate-100 pt-5">
+                <p className="mb-3 text-sm text-slate-600">
+                   Already submitted your application?
+               </p>
+
+                <button
+                  type="button"
+                  onClick={() => navigate('/my-application')}
+                  className="rounded-xl bg-green-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-green-900"
+                 >
+                   View Submitted Application
+                </button>
+              </div>
           </section>
         );
 
@@ -374,4 +381,4 @@ export default function ApplicantDashboard() {
       </div>
     </div>
   );
-}
+};

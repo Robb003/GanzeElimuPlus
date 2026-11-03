@@ -77,5 +77,10 @@ export const submitApplication = async (applicationData) => {
   return response.data;
 };
 
+export const getMyApplicationDetails = async () => {
+  const response = await API.get('/applications/my-application');
+  return response.data;
+};
+
 
 export default API;

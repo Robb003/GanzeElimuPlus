@@ -378,6 +378,58 @@ exports.submitApplication = async (req, res) => {
 };
 
 
+// GET MY APPLICATION SUMMARY
+// GET /api/applications/my-application
+
+exports.getMyApplication = async (req, res) => {
+  try {
+    // Ensure only applicants can access this endpoint
+    if (req.user.role !== 'applicant') {
+      return res.status(403).json({
+        message: 'Only applicants can access their application.'
+      });
+    }
+
+    // Retrieve the logged-in applicant's application
+    const application = await Application.findOne({
+      applicantId: req.user.id
+    })
+      .select(
+        'applicationNumber educationDetails.schoolName awardDetails.status createdAt'
+      )
+      .lean();
+
+    // Handle applicants who have not submitted an application
+    if (!application) {
+      return res.status(404).json({
+        message: 'You have not submitted an application yet.'
+      });
+    }
+
+    // Return only dashboard summary information
+    return res.status(200).json({
+      message: 'Application summary retrieved successfully.',
+      application: {
+        applicationNumber: application.applicationNumber,
+        status: application.awardDetails.status,
+        schoolName: application.educationDetails.schoolName,
+        vulnerabilityMetrics: application.vulnerabilityMetrics,
+        documents: getSafeDocumentMetadata(application.documents),
+        submittedAt: application.createdAt
+      }
+    });
+
+  } catch (error) {
+    console.error('Get application summary error:', error);
+
+    return res.status(500).json({
+      message: 'Unable to retrieve your application summary.'
+    });
+  }
+};
+
+
+
 // ============================================================
 // 2. CLERK REVIEW QUEUE
 // GET /api/applications/review-queue

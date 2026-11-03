@@ -9,6 +9,7 @@ import About from './Pages/About';
 import Register from './Pages/Register';
 import Login from './Pages/Login';
 import ApplicantDashboard from './Pages/ApplicantDashboard';
+import MyApplicationDetails from './Pages/MyApplicationDetails';
 
 import { AuthProvider } from './context/AuthContext';
 
@@ -23,6 +24,7 @@ const App = () => {
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/applicant-dashboard" element={<ApplicantDashboard />} />
+        <Route path="/my-application" element={<MyApplicationDetails />} />
       </Routes>
 
       <Footer />
