@@ -77,12 +77,10 @@ export default function ApplicantDashboard() {
       title: 'My Application',
       subtitle: 'View and manage your bursary application.',
     },
-
-    },
     notifications: {
       title: 'Notifications',
       subtitle: 'Stay updated on your bursary application.',
-    };
+    },
   };
 
   const currentPage = pageTitles[activePage] || pageTitles.overview;
@@ -268,31 +266,6 @@ export default function ApplicantDashboard() {
               </div>
           </section>
         );
-
-      case 'documents':
-        return (
-          <section className="rounded-2xl border border-slate-200 bg-white p-6">
-            <h2 className="text-lg font-bold text-slate-900">
-              Required Documents
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              We will add the five-document checklist and upload controls here.
-            </p>
-          </section>
-        );
-
-      case 'school':
-        return (
-          <section className="rounded-2xl border border-slate-200 bg-white p-6">
-            <h2 className="text-lg font-bold text-slate-900">
-              School Details
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              Verified school selection and school information will appear here.
-            </p>
-          </section>
-        );
-
       case 'notifications':
         return (
           <RecentNotifications
@@ -322,14 +295,6 @@ export default function ApplicantDashboard() {
                 description="Your application information has not yet been connected to the backend."
                 icon="▤"
                 accent="green"
-              />
-
-              <StatCard
-                title="Required Documents"
-                value="5"
-                description="Five supporting documents are required for review."
-                icon="▧"
-                accent="amber"
               />
 
               <StatCard

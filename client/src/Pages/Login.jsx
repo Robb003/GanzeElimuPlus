@@ -62,7 +62,8 @@ export default function Login() {
           break;
 
         default:
-          navigate('/dashboard', { replace: true });
+          setError('Your account has an unrecognized role. Please contact the administrator.');
+          break;
       }
     } catch (err) {
       setError(

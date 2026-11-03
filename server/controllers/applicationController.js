@@ -381,52 +381,78 @@ exports.submitApplication = async (req, res) => {
 // GET MY APPLICATION SUMMARY
 // GET /api/applications/my-application
 
+
 exports.getMyApplication = async (req, res) => {
   try {
-    // Ensure only applicants can access this endpoint
+    // 1. Only applicants can access their own applications.
     if (req.user.role !== 'applicant') {
       return res.status(403).json({
         message: 'Only applicants can access their application.'
       });
     }
 
-    // Retrieve the logged-in applicant's application
+    // 2. Retrieve the complete application belonging to this applicant.
     const application = await Application.findOne({
       applicantId: req.user.id
     })
       .select(
-        'applicationNumber educationDetails.schoolName awardDetails.status createdAt'
+        'applicationNumber educationDetails vulnerabilityMetrics documents awardDetails.status createdAt'
       )
       .lean();
 
-    // Handle applicants who have not submitted an application
+    // 3. Handle applicants without applications.
     if (!application) {
       return res.status(404).json({
         message: 'You have not submitted an application yet.'
       });
     }
 
-    // Return only dashboard summary information
+    // 4. Return the actual submitted application information.
     return res.status(200).json({
-      message: 'Application summary retrieved successfully.',
+      message: 'Application details retrieved successfully.',
+
       application: {
         applicationNumber: application.applicationNumber,
-        status: application.awardDetails.status,
-        schoolName: application.educationDetails.schoolName,
-        vulnerabilityMetrics: application.vulnerabilityMetrics,
-        documents: getSafeDocumentMetadata(application.documents),
-        submittedAt: application.createdAt
+
+        status: application.awardDetails?.status,
+
+        submittedAt: application.createdAt,
+
+        // Education information
+        educationDetails: {
+          schoolName: application.educationDetails?.schoolName,
+          studentCategory: application.educationDetails?.studentCategory,
+          admissionNumber: application.educationDetails?.admissionNumber,
+          outstandingFees: application.educationDetails?.outstandingFees
+        },
+
+        // Family and vulnerability information
+        vulnerabilityMetrics: {
+          familyStatus: application.vulnerabilityMetrics?.familyStatus,
+          householdIncomeBracket:
+            application.vulnerabilityMetrics?.householdIncomeBracket,
+          disabledParents:
+            application.vulnerabilityMetrics?.disabledParents,
+          chronicIllnessInFamily:
+            application.vulnerabilityMetrics?.chronicIllnessInFamily,
+          siblingsInSchool:
+            application.vulnerabilityMetrics?.siblingsInSchool
+        },
+
+        // Supporting document information
+        documents: getSafeDocumentMetadata(application.documents)
       }
     });
 
   } catch (error) {
-    console.error('Get application summary error:', error);
+    console.error('Get application details error:', error);
 
     return res.status(500).json({
-      message: 'Unable to retrieve your application summary.'
+      message: 'Unable to retrieve your application details.'
     });
   }
 };
+
 
 
 

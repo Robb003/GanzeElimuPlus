@@ -4,8 +4,6 @@ import React from 'react';
 const navigationItems = [
   { id: 'overview', label: 'Overview', icon: '⌂' },
   { id: 'application', label: 'My Application', icon: '▤' },
-  { id: 'documents', label: 'Documents', icon: '▧' },
-  { id: 'school', label: 'School Details', icon: '⌂' },
   { id: 'notifications', label: 'Notifications', icon: '♧' },
 ];
 

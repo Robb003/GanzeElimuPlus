@@ -423,7 +423,7 @@ const MyApplicationDetails = () => {
 
         <div className="flex justify-center pb-6">
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/applicant-dashboard')}
             className="w-full rounded-lg bg-green-700 px-8 py-3 font-semibold text-white transition hover:bg-green-800 sm:w-auto"
           >
             Return to Dashboard
