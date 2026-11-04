@@ -81,6 +81,23 @@ export const getMyApplicationDetails = async () => {
   const response = await API.get('/applications/my-application');
   return response.data;
 };
+// Record applicant privacy notice acknowledgement
+export const recordPrivacyAcknowledgement = async (payload) => {
+  const response = await API.post(
+    '/privacy/acknowledgement',
+    payload
+  );
 
+  return response.data;
+};
+
+// Get applicant's privacy acknowledgement
+export const getMyPrivacyAcknowledgement = async () => {
+  const response = await API.get(
+    '/privacy/my-acknowledgement'
+  );
+
+  return response.data;
+};
 
 export default API;

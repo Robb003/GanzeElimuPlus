@@ -22,6 +22,7 @@ export default function Register() {
 
   const [form, setForm] = useState(initialForm);
   const [showPassword, setShowPassword] = useState(false);
+  const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -48,6 +49,13 @@ export default function Register() {
     setError('');
     setSuccess('');
 
+    if (!privacyAcknowledged) {
+      setError(
+        'Please read and acknowledge the Data Protection & Privacy Notice before registering.'
+      );
+      return;
+    }
+
     if (!form.identityNumber.trim()) {
       setError('Please enter your selected identity number.');
       return;
@@ -69,6 +77,7 @@ export default function Register() {
       password: form.password,
       ward: form.ward,
       village: form.village.trim(),
+      privacyAcknowledged,
       ...(form.identityType === 'nationalID'
         ? { nationalID: form.identityNumber.trim() }
         : {
@@ -86,6 +95,7 @@ export default function Register() {
       );
 
       setForm({ ...initialForm });
+      setPrivacyAcknowledged(false);
 
       // Registration does not automatically log the user in.
       setTimeout(() => {
@@ -441,6 +451,34 @@ export default function Register() {
                 />
               </div>
 
+              {/* Data Protection & Privacy Notice acknowledgement */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <label className="flex cursor-pointer items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={privacyAcknowledged}
+                    onChange={(event) =>
+                      setPrivacyAcknowledged(event.target.checked)
+                    }
+                    className="mt-1 h-4 w-4 shrink-0 accent-[#14532D]"
+                  />
+
+                  <span className="text-sm leading-6 text-slate-700">
+                    I acknowledge that I have read and understood the{' '}
+                    <Link
+                      to="/privacy-notice"
+                      className="font-bold text-[#166534] underline hover:text-[#14532D]"
+                    >
+                      Data Protection & Privacy Notice
+                    </Link>
+                    {' '}and understand how my personal information
+                    will be collected and processed for the ElimuPlus
+                    bursary programme.
+                  </span>
+                </label>
+              </div>
+
+              {/* Create account */}
               <button
                 type="submit"
                 disabled={loading}

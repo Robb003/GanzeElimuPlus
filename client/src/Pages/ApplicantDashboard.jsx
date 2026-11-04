@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import ApplicantSidebar from '../Components/Applicant/ApplicantSidebar';
@@ -8,9 +8,13 @@ import StatCard from '../Components/Applicant/StatCard';
 import ApplicationProgress from '../Components/Applicant/ApplicationProgress';
 import RecentNotifications from '../Components/Applicant/RecentNotifications';
 import ApplicationForm from '../Components/Applicant/ApplicationForm';
-import ApplicationCountdown from '../Components/ApplicationCountdown'
+import ApplicationCountdown from '../Components/ApplicationCountdown';
 
-import { getActiveBursaryCycle } from '../Service/api';
+import {
+  getActiveBursaryCycle,
+  getMyApplicationDetails,
+} from '../Service/api';
+
 export default function ApplicantDashboard() {
   const navigate = useNavigate();
 
@@ -22,6 +26,11 @@ export default function ApplicantDashboard() {
   const [cycleLoading, setCycleLoading] = useState(true);
   const [cycleError, setCycleError] = useState('');
 
+  // Applicant application state
+  const [application, setApplication] = useState(null);
+  const [applicationLoading, setApplicationLoading] = useState(true);
+  const [applicationError, setApplicationError] = useState('');
+
   const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
 
   const applicantName =
@@ -29,9 +38,66 @@ export default function ApplicantDashboard() {
     storedUser?.fullName ||
     'Applicant';
 
-  // Temporary until the applications endpoint is connected
-  const applicationStatus = 'not_started';
   const notifications = [];
+
+  // Fetch the logged-in applicant's application
+  const fetchMyApplication = useCallback(async () => {
+    try {
+      setApplicationLoading(true);
+      setApplicationError('');
+
+      const response = await getMyApplicationDetails();
+
+      // Support either a direct application response
+      // or an application nested inside a response object.
+      const applicationData =
+        response?.application ??
+        response?.data?.application ??
+        response?.data ??
+        (response?.applicationNumber ? response : null);
+
+      setApplication(
+        applicationData?.application ??
+        applicationData ??
+        null
+      );
+
+    } catch (error) {
+      // A 404 can mean that the applicant has not
+      // submitted an application yet.
+      if (error.response?.status === 404) {
+        setApplication(null);
+        setApplicationError('');
+      } else {
+        console.error('Error fetching applicant application:', error);
+
+        setApplicationError(
+          error.response?.data?.message ||
+          'Unable to retrieve your application information.'
+        );
+      }
+    } finally {
+      setApplicationLoading(false);
+    }
+  }, []);
+
+  // Fetch application when dashboard loads
+  useEffect(() => {
+    fetchMyApplication();
+  }, [fetchMyApplication]);
+
+  // Refresh application when user returns to the dashboard tab
+  useEffect(() => {
+    const handleWindowFocus = () => {
+      fetchMyApplication();
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+
+    return () => {
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, [fetchMyApplication]);
 
   // Fetch the active bursary cycle from the backend
   useEffect(() => {
@@ -51,7 +117,7 @@ export default function ApplicantDashboard() {
         if (!cancelled) {
           setCycleError(
             error.response?.data?.message ||
-              'Unable to load bursary cycle information. Please try again.'
+            'Unable to load bursary cycle information. Please try again.'
           );
         }
       } finally {
@@ -67,6 +133,63 @@ export default function ApplicantDashboard() {
       cancelled = true;
     };
   }, []);
+
+  const backendStatus =
+  application?.awardDetails?.status ||
+  (application ? 'Submitted' : 'not_started');
+
+  const normalizedBackendStatus = String(backendStatus)
+    .trim()
+    .toLowerCase()
+    .replaceAll('_', '-');
+
+  const statusConfiguration = {
+    pending: {
+      label: 'Submitted',
+      progress: 'submitted',
+      description: 'Your application has been received and is awaiting document verification.',
+    },
+    submitted: {
+      label: 'Submitted',
+      progress: 'submitted',
+      description: 'Your application has been successfully submitted.',
+    },
+    verified: {
+      label: 'Verified',
+      progress: 'verification',
+      description: 'Your application documents have been verified.',
+    },
+    'board-approved': {
+      label: 'Board Review',
+      progress: 'board',
+      description: 'Your application has been approved at the board stage.',
+    },
+    approved: {
+      label: 'Approved',
+      progress: 'approved',
+      description: 'Your bursary application has been approved.',
+    },
+    disbursed: {
+      label: 'Disbursed',
+      progress: 'disbursed',
+      description: 'Your bursary payment has been processed.',
+    },
+    rejected: {
+      label: 'Rejected',
+      progress: 'rejected',
+      description: 'Your application was rejected. Please check the feedback provided.',
+    },
+  };
+
+  const currentStatus = statusConfiguration[normalizedBackendStatus] || {
+    label: application ? 'Submitted' : 'Not Started',
+    progress: application ? 'submitted' : 'not_started',
+    description: application
+      ? 'Your application has been received.'
+      : 'You have not submitted an application yet.',
+  };
+
+  const applicationStatus = currentStatus.progress;
 
   const pageTitles = {
     overview: {
@@ -88,13 +211,13 @@ export default function ApplicantDashboard() {
   function formatDate(date) {
     if (!date) return 'Not provided';
 
-    const parsedDate = new Date(date);
+    const parsed = new Date(date);
 
-    if (Number.isNaN(parsedDate.getTime())) {
+    if (Number.isNaN(parsed.getTime())) {
       return 'Invalid date';
     }
 
-    return parsedDate.toLocaleDateString('en-KE', {
+    return parsed.toLocaleDateString('en-KE', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
@@ -111,15 +234,17 @@ export default function ApplicantDashboard() {
   function handleNavigation(page) {
     setActivePage(page);
     setSidebarOpen(false);
+
+    // Refresh application when returning to overview
+    if (page === 'overview') {
+      fetchMyApplication();
+    }
   }
 
   function renderCycleCard() {
     if (cycleLoading) {
       return (
-        <section
-          className="rounded-2xl border border-slate-200 bg-white p-6"
-          aria-live="polite"
-        >
+        <section className="rounded-2xl border border-slate-200 bg-white p-6">
           <p className="text-sm text-slate-500">
             Loading bursary cycle information...
           </p>
@@ -202,6 +327,7 @@ export default function ApplicantDashboard() {
             <p className="text-sm text-slate-500">
               Opening Date
             </p>
+
             <p className="mt-1 font-semibold text-slate-900">
               {formatDate(activeCycle.openingDate)}
             </p>
@@ -211,6 +337,7 @@ export default function ApplicantDashboard() {
             <p className="text-sm text-slate-500">
               Closing Date
             </p>
+
             <p className="mt-1 font-semibold text-slate-900">
               {formatDate(activeCycle.closingDate)}
             </p>
@@ -223,7 +350,7 @@ export default function ApplicantDashboard() {
             : 'The application window is not currently open. Please check the dates and wait for the next application period if necessary.'}
         </p>
 
-        {isOpen && (
+        {isOpen && !application && (
           <button
             type="button"
             onClick={() => handleNavigation('application')}
@@ -244,28 +371,31 @@ export default function ApplicantDashboard() {
             <h2 className="text-lg font-bold text-slate-900">
               My Application
             </h2>
+
             <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Complete the application form and upload the required documents.
+              Complete the application form and upload the required documents.
             </p>
 
             <div className="mt-6">
               <ApplicationForm />
             </div>
-            <div className="mt-6 border-t border-slate-100 pt-5">
-                <p className="mb-3 text-sm text-slate-600">
-                   Already submitted your application?
-               </p>
 
-                <button
-                  type="button"
-                  onClick={() => navigate('/my-application')}
-                  className="rounded-xl bg-green-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-green-900"
-                 >
-                   View Submitted Application
-                </button>
-              </div>
+            <div className="mt-6 border-t border-slate-100 pt-5">
+              <p className="mb-3 text-sm text-slate-600">
+                Already submitted your application?
+              </p>
+
+              <button
+                type="button"
+                onClick={() => navigate('/my-application')}
+                className="rounded-xl bg-green-800 px-5 py-3 text-sm font-semibold text-white transition hover:bg-green-900"
+              >
+                View Submitted Application
+              </button>
+            </div>
           </section>
         );
+
       case 'notifications':
         return (
           <RecentNotifications
@@ -281,6 +411,7 @@ export default function ApplicantDashboard() {
               <h2 className="text-xl font-bold text-slate-900">
                 Welcome, {applicantName}
               </h2>
+
               <p className="mt-1 text-sm leading-6 text-slate-500">
                 Manage your bursary application from one place.
               </p>
@@ -291,8 +422,16 @@ export default function ApplicantDashboard() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
               <StatCard
                 title="Application Status"
-                value="Not Started"
-                description="Your application information has not yet been connected to the backend."
+                value={
+                  applicationLoading
+                    ? 'Loading...'
+                    : currentStatus.label
+                }
+                description={
+                  applicationLoading
+                    ? 'Retrieving your application information.'
+                    : applicationError || currentStatus.description
+                }
                 icon="▤"
                 accent="green"
               />
@@ -306,12 +445,40 @@ export default function ApplicantDashboard() {
               />
             </div>
 
-            <ApplicationProgress status={applicationStatus} />
+            {applicationError && (
+              <div
+                role="alert"
+                className="rounded-xl border border-red-200 bg-red-50 p-4"
+              >
+                <p className="text-sm text-red-700">
+                  {applicationError}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={fetchMyApplication}
+                  className="mt-2 text-sm font-semibold text-red-800 underline"
+                >
+                  Try again
+                </button>
+              </div>
+            )}
+
+            {applicationLoading ? (
+              <section className="rounded-2xl border border-slate-200 bg-white p-5">
+                <p className="text-sm text-slate-500">
+                  Loading application progress...
+                </p>
+              </section>
+            ) : (
+              <ApplicationProgress status={applicationStatus} />
+            )}
 
             <RecentNotifications
               notifications={notifications}
               onViewAll={() => handleNavigation('notifications')}
             />
+
             <div className="mt-5">
               <ApplicationCountdown />
             </div>
@@ -346,4 +513,4 @@ export default function ApplicantDashboard() {
       </div>
     </div>
   );
-};
+}

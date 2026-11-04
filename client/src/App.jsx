@@ -10,6 +10,7 @@ import Register from './Pages/Register';
 import Login from './Pages/Login';
 import ApplicantDashboard from './Pages/ApplicantDashboard';
 import MyApplicationDetails from './Pages/MyApplicationDetails';
+import Consent from './Pages/Consent';
 
 import { AuthProvider } from './context/AuthContext';
 
@@ -23,6 +24,7 @@ const App = () => {
         <Route path="/about" element={<About />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/privacy-notice" element={<Consent />} />
         <Route path="/applicant-dashboard" element={<ApplicantDashboard />} />
         <Route path="/my-application" element={<MyApplicationDetails />} />
       </Routes>

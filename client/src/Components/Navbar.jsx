@@ -1,21 +1,25 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { assets } from '../assets/assets'
+
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { assets } from '../assets/assets';
 
 function Navbar() {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false);
 
-  const closeMenu = () => setIsOpen(false)
+  const closeMenu = () => setIsOpen(false);
 
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'About', path: '/about' },
-  ]
+  ];
+
+  const linkStyle =
+    'font-semibold text-[#14532D] transition-colors duration-200 hover:text-[#166534]';
 
   return (
     <>
       {/* Main Navbar */}
-      <nav className="sticky top-0 z-40 border-b border-gray-100 bg-white shadow-sm">
+      <nav className="sticky top-0 z-40 w-full bg-white">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
 
           {/* Logo */}
@@ -32,16 +36,29 @@ function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden items-center gap-8 md:flex">
+          <div className="hidden items-center gap-9 md:flex">
             {navLinks.map((link) => (
               <Link
                 key={link.name}
                 to={link.path}
-                className="font-medium text-gray-700 transition hover:text-green-800"
+                className={linkStyle}
               >
                 {link.name}
               </Link>
             ))}
+
+            {/* Login */}
+            <Link to="/login" className={linkStyle}>
+              Login
+            </Link>
+
+            {/* Register */}
+            <Link
+              to="/register"
+              className="inline-flex items-center justify-center rounded-lg border-0 bg-[#14532D] px-6 py-3 font-semibold text-white shadow-none transition-colors duration-200 hover:bg-[#166534]"
+            >
+              Register
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -50,7 +67,7 @@ function Navbar() {
             onClick={() => setIsOpen(true)}
             aria-label="Open navigation menu"
             aria-expanded={isOpen}
-            className="rounded-lg p-2 text-green-900 transition hover:bg-green-50 md:hidden"
+            className="rounded-lg p-2 text-[#14532D] transition hover:bg-[#F0FDF4] md:hidden"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -84,14 +101,15 @@ function Navbar() {
 
           {/* Side Drawer */}
           <aside
-            className="absolute right-0 top-0 flex h-full w-4/5 max-w-sm flex-col bg-white shadow-2xl"
+            className="absolute right-0 top-0 flex h-full w-4/5 max-w-sm flex-col bg-white"
             aria-label="Mobile navigation"
           >
+
             {/* Drawer Header */}
-            <div className="flex h-20 items-center justify-between border-b border-gray-100 px-5">
+            <div className="flex h-20 items-center justify-between px-5">
               <Link to="/" onClick={closeMenu}>
                 <img
-                  src={assets.logo}
+                  src={assets.Icon}
                   alt="ElimuPlus"
                   className="h-11 w-auto object-contain"
                 />
@@ -101,7 +119,7 @@ function Navbar() {
                 type="button"
                 onClick={closeMenu}
                 aria-label="Close navigation menu"
-                className="rounded-lg p-2 text-gray-600 transition hover:bg-gray-100 hover:text-green-800"
+                className="rounded-lg p-2 text-[#14532D] transition hover:bg-[#F0FDF4]"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -121,21 +139,39 @@ function Navbar() {
             </div>
 
             {/* Mobile Navigation Links */}
-            <div className="flex flex-1 flex-col gap-2 px-5 py-8">
+            <div className="flex flex-1 flex-col gap-3 px-5 py-8">
               {navLinks.map((link) => (
                 <Link
                   key={link.name}
                   to={link.path}
                   onClick={closeMenu}
-                  className="rounded-lg px-4 py-3 font-medium text-gray-700 transition hover:bg-green-50 hover:text-green-800"
+                  className="rounded-lg px-4 py-3 font-semibold text-[#14532D] transition hover:bg-[#F0FDF4]"
                 >
                   {link.name}
                 </Link>
               ))}
+
+              {/* Login */}
+              <Link
+                to="/login"
+                onClick={closeMenu}
+                className="rounded-lg px-4 py-3 font-semibold text-[#14532D] transition hover:bg-[#F0FDF4]"
+              >
+                Login
+              </Link>
+
+              {/* Register */}
+              <Link
+                to="/register"
+                onClick={closeMenu}
+                className="mt-2 rounded-lg border-0 bg-[#14532D] px-4 py-3 text-center font-semibold text-white transition hover:bg-[#166534]"
+              >
+                Register
+              </Link>
             </div>
 
             {/* Drawer Footer */}
-            <div className="border-t border-gray-100 px-6 py-5">
+            <div className="px-6 py-5">
               <p className="text-center text-sm text-gray-500">
                 Empowering Ganze's Future
               </p>
@@ -144,7 +180,7 @@ function Navbar() {
         </div>
       )}
     </>
-  )
+  );
 }
 
-export default Navbar
+export default Navbar;

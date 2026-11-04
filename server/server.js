@@ -7,7 +7,7 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
 const adminRoutes = require('./routes/adminRoutes');
-
+const privacyRoute = require('./routes/privacyRoute');
 const app = express();
 
 // INIT DATABASE C
@@ -21,7 +21,8 @@ app.use(express.json()); // Automatically intercepts and parses incoming JSON pa
 //  MOUNT API ROUTE 
 app.use('/api/auth', authRoutes);               // Manages login, profiles, and phone identifiers
 app.use('/api/applications', applicationRoutes); // Handles secure form submissions and blind clerk screening
-app.use('/api/admin', adminRoutes);             // Commands executive budget loops and bulk batch bank disbursements
+app.use('/api/admin', adminRoutes); 
+app.use('/api/privacy', privacyRoute)            // Commands executive budget loops and bulk batch bank disbursements
 
 //  HEALTH CHECK & SYSTEM DIAGNOSTICS ROUTE
 app.get('/', (req, res) => {
