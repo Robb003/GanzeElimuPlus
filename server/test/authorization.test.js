@@ -220,4 +220,47 @@ describe('ElimuPlus Role-Based Authorization Security Tests', () => {
     }
   );
 
+  // ============================================================
+  // POSITIVE ROLE AUTHORIZATION TESTS
+  // ============================================================
+
+  const authorizedAccessTests = [
+    {
+      role: 'clerk',
+      endpoint: '/api/applications/review-queue',
+      expectedBody: [],
+      description: 'Clerks can access the application review queue'
+    },
+    {
+      role: 'board',
+      endpoint: '/api/applications/board-queue',
+      expectedBody: [],
+      description: 'Board members can access the board review queue'
+    },
+    {
+      role: 'admin',
+      endpoint: '/api/admin/getleaderboard',
+      expectedBody: {
+        count: 0,
+        data: []
+      },
+      description: 'Admins can access the application leaderboard'
+    }
+  ];
+
+  test.each(authorizedAccessTests)(
+    '$description',
+    async ({ role, endpoint, expectedBody }) => {
+      const token = await createAuthenticatedUser(role);
+
+      const response = await request(app)
+        .get(endpoint)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.statusCode).toBe(200);
+      expect(response.body).toEqual(expectedBody);
+    }
+  );
+
+
 });

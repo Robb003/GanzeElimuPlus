@@ -128,6 +128,25 @@ const getSafeDocumentMetadata = (documents) => {
   return metadata;
 };
 
+// Return safe document review information without exposing reviewer IDs.
+const getSafeDocumentReviews = (reviews) => {
+  const safeReviews = {};
+
+  for (const type of DOCUMENT_TYPES) {
+    const review = reviews?.[type];
+
+    safeReviews[type] = review
+      ? {
+          status: review.status,
+          notes: review.notes,
+          reviewedAt: review.reviewedAt
+        }
+      : null;
+  }
+
+  return safeReviews;
+};
+
 // ============================================================
 // 1. SUBMIT APPLICATION
 // POST /api/applications/submit
@@ -262,14 +281,20 @@ exports.submitApplication = async (req, res) => {
     }
 
     // 11. Check duplicate applications for the calendar year.
-    const currentYear = new Date().getFullYear();
+    const currentYear = new Date().getUTCFullYear();
 
     const existingApplication = await Application.findOne({
       applicantId: req.user.id,
-      createdAt: {
-        $gte: new Date(`${currentYear}-01-01T00:00:00.000Z`),
-        $lt: new Date(`${currentYear + 1}-01-01T00:00:00.000Z`)
-      }
+      $or: [
+        { applicationYear: currentYear },
+        {
+          applicationYear: { $exists: false },
+          createdAt: {
+            $gte: new Date(`${currentYear}-01-01T00:00:00.000Z`),
+            $lt: new Date(`${currentYear + 1}-01-01T00:00:00.000Z`)
+          }
+        }
+      ]
     }).select('_id');
 
     if (existingApplication) {
@@ -307,6 +332,7 @@ exports.submitApplication = async (req, res) => {
     const application = new Application({
       applicationNumber: trackingID,
       applicantId: req.user.id,
+      applicationYear: currentYear,
 
       vulnerabilityMetrics: {
         familyStatus,
@@ -441,7 +467,7 @@ exports.getMyApplication = async (req, res) => {
 
         // Supporting document information
         documents: getSafeDocumentMetadata(application.documents),
-        documentReviews: application.documentReviews
+        documentReviews: getSafeDocumentReviews(application.documentReviews)
       }
     });
 
@@ -493,7 +519,7 @@ exports.getReviewQueue = async (req, res) => {
       },
 
       documents: getSafeDocumentMetadata(application.documents),
-      documentReviews: application.documentReviews
+      documentReviews: getSafeDocumentReviews(application.documentReviews)
     }));
 
     return res.status(200).json(queue);
@@ -628,7 +654,7 @@ exports.processVerification = async (req, res) => {
       responseData = {
         applicationNumber: application.applicationNumber,
         status: application.awardDetails.status,
-        documentReviews: application.documentReviews
+        documentReviews: getSafeDocumentReviews(application.documentReviews)
       };
     });
 
@@ -699,7 +725,7 @@ exports.getBoardReviewQueue = async (req, res) => {
       proposedAmount: application.awardDetails.proposedAmount,
 
       documents: getSafeDocumentMetadata(application.documents),
-      documentReviews: application.documentReviews
+      documentReviews: getSafeDocumentReviews(application.documentReviews)
     }));
 
     return res.status(200).json(queue);

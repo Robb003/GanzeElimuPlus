@@ -109,6 +109,12 @@ const ApplicationSchema = new mongoose.Schema(
       ref: 'User',
       required: true
     },
+    applicationYear: {
+      type: Number,
+      required: true,
+      immutable: true,
+      min: 2020
+    },
 
     /*
     |--------------------------------------------------------------------------
@@ -355,12 +361,17 @@ ApplicationSchema.pre('validate', function () {
     );
   }
 });
-
-/*
-|--------------------------------------------------------------------------
-| Export Application Model
-|--------------------------------------------------------------------------
-*/
+// Prevent an applicant from submitting more than one
+// application per calendar year.
+ApplicationSchema.index(
+  { applicantId: 1, applicationYear: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      applicationYear: { $type: 'number' }
+    }
+  }
+);
 
 module.exports = mongoose.model(
   'Application',
