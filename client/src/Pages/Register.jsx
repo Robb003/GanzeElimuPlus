@@ -128,12 +128,17 @@ export default function Register() {
             />
 
             <div className="relative">
-              <Link to="/" className="inline-flex items-center gap-3">
-                <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-white text-xl font-extrabold text-[#14532D]">
+              <Link
+                to="/"
+                aria-label="ElimuPlus home"
+                className="inline-flex items-center gap-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              >
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-xl font-extrabold text-[#14532D]">
                   E
                 </span>
-                <span className="text-2xl font-extrabold">
-                  ElimuPlus
+
+                <span className="ml-1 text-xl font-extrabold xl:text-2xl">
+                  limuPlus
                 </span>
               </Link>
 
@@ -167,12 +172,17 @@ export default function Register() {
 
             {/* Mobile branding */}
             <div className="mb-8 lg:hidden">
-              <Link to="/" className="inline-flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#14532D] text-lg font-extrabold text-white">
+              <Link
+                to="/"
+                aria-label="ElimuPlus home"
+                className="inline-flex items-center gap-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#166534] md:hidden"
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#14532D] text-lg font-extrabold text-white">
                   E
                 </span>
-                <span className="text-xl font-extrabold text-[#14532D]">
-                  ElimuPlus
+
+                <span className="ml-1 text-xl font-extrabold text-[#14532D]">
+                  limuPlus
                 </span>
               </Link>
             </div>

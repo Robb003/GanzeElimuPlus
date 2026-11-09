@@ -394,9 +394,10 @@ exports.configureBursaryCycle = async (req, res) => {
  */
 exports.getActiveBursaryCycle = async (req, res) => {
   try {
-    const period = await Period.findOne({
-      isActive: true
-    })
+        const period = await Period.findOne({
+           isActive: true
+       })
+      .select('cycleName openingDate closingDate isActive -_id')
       .sort({ createdAt: -1 })
       .lean();
 
@@ -423,7 +424,6 @@ exports.getActiveBursaryCycle = async (req, res) => {
     return res.status(200).json({
       message: 'Active bursary cycle retrieved successfully.',
       data: {
-        _id: period._id,
         cycleName: period.cycleName,
         openingDate: period.openingDate,
         closingDate: period.closingDate,
@@ -496,11 +496,14 @@ exports.simulatePaymentConfirmation = async (req, res) => {
             status: 'Pending'
           },
           {
-            $set: {
-              status: 'Completed',
-              completedAt: new Date(),
-              failureReason: null
-            }
+
+              $set: {
+                status: 'Completed',
+                completedAt: new Date(),
+                failureReason: null,
+                simulationOnly: true
+              }
+
           },
           {
             new: true,

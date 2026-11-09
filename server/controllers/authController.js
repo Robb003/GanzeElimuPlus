@@ -13,7 +13,6 @@ exports.registerUser = async (req, res) => {
   const {
     phoneNumber,
     password,
-    role,
     fullName,
     nationalID,
     birthCertificateNumber,
@@ -84,7 +83,7 @@ exports.registerUser = async (req, res) => {
     const user = await User.create({
       phoneNumber: phoneNumber.trim(),
       passwordHash,
-      role: role || "applicant",
+      role: "applicant",
       profile
     });
 
@@ -114,10 +113,17 @@ exports.registerUser = async (req, res) => {
 // Login logic endpoint
 exports.loginUser = async (req, res) => {
   const { phoneNumber, password } = req.body;
+  if (!phoneNumber?.trim() || !password) {
+    return res.status(400).json({
+       message: 'Phone number and password are required.'
+    });
+  }
 
   try {
     // Locate the account via phone identifier
-    const user = await User.findOne({ phoneNumber });
+    const user = await User.findOne({
+       phoneNumber: phoneNumber.trim()
+    });
 
     // Comparison on the provided string against the database hash
     if (user && (await bcrypt.compare(password, user.passwordHash))) {

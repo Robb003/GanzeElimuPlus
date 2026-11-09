@@ -13,14 +13,20 @@ const statusOrder = {
   not_started: -1,
   pending: 0,
   submitted: 0,
-  verified: 1,
-  verification: 1,
-  'board-approved': 2,
-  board_approved: 2,
+
+  verified: 2,
+  'clerk-verified': 2,
+  'documents-verified': 2,
+  'ready-for-board': 2,
+  'board-review': 2,
+  'under-board-review': 2,
+
+  'board-approved': 3,
   approved: 3,
+  'final-approved': 3,
+
   completed: 4,
   disbursed: 4,
-  rejected: -2,
 };
 
 export default function ApplicationProgress({
@@ -29,28 +35,26 @@ export default function ApplicationProgress({
   const normalizedStatus = String(status)
     .trim()
     .toLowerCase()
-    .replaceAll('_', '-');
+    .replaceAll('_', '-')
+    .replaceAll(' ', '-');
 
-  const normalizedOrder = Object.fromEntries(
-    Object.entries(statusOrder).map(([key, value]) => [
-      key.replaceAll('_', '-'),
-      value,
-    ])
-  );
-
-  const currentOrder = normalizedOrder[normalizedStatus] ?? -1;
+  const currentOrder =
+    statusOrder[normalizedStatus] ?? -1;
 
   const isRejected = normalizedStatus === 'rejected';
+
   const isNotStarted =
-    normalizedStatus === 'not_started' ||
+    normalizedStatus === 'not-started' ||
     currentOrder === -1;
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+
       <div className="mb-6">
         <h2 className="text-lg font-bold text-slate-900">
           Application Progress
         </h2>
+
         <p className="mt-1 text-sm leading-6 text-slate-500">
           Follow the stages of your bursary application.
         </p>
@@ -61,17 +65,14 @@ export default function ApplicationProgress({
           <p className="font-semibold text-slate-800">
             No application submitted yet
           </p>
-          <p className="mt-1 text-sm leading-6 text-slate-600">
-            Once you submit your application, you can track its progress here.
-          </p>
         </div>
       ) : isRejected ? (
-        <div role="status" className="rounded-xl border border-red-200 bg-red-50 p-4">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4">
           <p className="font-semibold text-red-800">
             Application rejected
           </p>
-          <p className="mt-1 text-sm leading-6 text-red-700">
-            Please check any feedback provided by the bursary office.
+          <p className="mt-1 text-sm text-red-700">
+            Please check feedback from the bursary office.
           </p>
         </div>
       ) : (
@@ -98,7 +99,9 @@ export default function ApplicationProgress({
                   {index < stages.length - 1 && (
                     <div
                       className={`mt-2 min-h-6 w-0.5 flex-1 ${
-                        isComplete ? 'bg-green-700' : 'bg-slate-200'
+                        isComplete
+                          ? 'bg-green-700'
+                          : 'bg-slate-200'
                       }`}
                     />
                   )}
@@ -128,7 +131,7 @@ export default function ApplicationProgress({
       )}
 
       <p className="mt-5 border-t border-slate-100 pt-4 text-xs leading-5 text-slate-500">
-        Progress reflects the status returned by ElimuPlus.
+        Progress reflects the latest application status.
         Approval and payment are separate stages.
       </p>
     </section>

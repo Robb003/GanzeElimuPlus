@@ -396,7 +396,7 @@ exports.getMyApplication = async (req, res) => {
       applicantId: req.user.id
     })
       .select(
-        'applicationNumber educationDetails vulnerabilityMetrics documents awardDetails.status createdAt'
+        'applicationNumber educationDetails vulnerabilityMetrics documents documentReviews awardDetails.status createdAt'
       )
       .lean();
 
@@ -440,7 +440,8 @@ exports.getMyApplication = async (req, res) => {
         },
 
         // Supporting document information
-        documents: getSafeDocumentMetadata(application.documents)
+        documents: getSafeDocumentMetadata(application.documents),
+        documentReviews: application.documentReviews
       }
     });
 

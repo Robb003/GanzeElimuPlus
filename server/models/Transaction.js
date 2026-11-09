@@ -36,6 +36,12 @@ const TransactionSchema = new mongoose.Schema({
     required: true
   },
 
+  simulationOnly: {
+  type: Boolean,
+  default: false,
+  required: true
+  },
+
   processedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

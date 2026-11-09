@@ -48,23 +48,22 @@ export default function ApplicantDashboard() {
 
       const response = await getMyApplicationDetails();
 
-      // Support either a direct application response
-      // or an application nested inside a response object.
+      // Axios normally returns the API body inside response.data.
+      const responseData = response?.data ?? response;
+
+      // Backend returns:
+      // { message: "...", application: { status: "...", ... } }
       const applicationData =
-        response?.application ??
-        response?.data?.application ??
-        response?.data ??
-        (response?.applicationNumber ? response : null);
+        responseData?.application ??
+        responseData?.data?.application ??
+        responseData?.data ??
+        null;
 
       setApplication(
-        applicationData?.application ??
-        applicationData ??
-        null
+        applicationData?.application ?? applicationData
       );
 
     } catch (error) {
-      // A 404 can mean that the applicant has not
-      // submitted an application yet.
       if (error.response?.status === 404) {
         setApplication(null);
         setApplicationError('');
@@ -86,7 +85,7 @@ export default function ApplicantDashboard() {
     fetchMyApplication();
   }, [fetchMyApplication]);
 
-  // Refresh application when user returns to the dashboard tab
+  // Refresh application when user returns to the browser tab
   useEffect(() => {
     const handleWindowFocus = () => {
       fetchMyApplication();
@@ -99,7 +98,7 @@ export default function ApplicantDashboard() {
     };
   }, [fetchMyApplication]);
 
-  // Fetch the active bursary cycle from the backend
+  // Fetch the active bursary cycle
   useEffect(() => {
     let cancelled = false;
 
@@ -111,7 +110,7 @@ export default function ApplicantDashboard() {
         const response = await getActiveBursaryCycle();
 
         if (!cancelled) {
-          setActiveCycle(response?.data ?? null);
+          setActiveCycle(response?.data ?? response ?? null);
         }
       } catch (error) {
         if (!cancelled) {
@@ -134,50 +133,72 @@ export default function ApplicantDashboard() {
     };
   }, []);
 
-  const backendStatus =
-  application?.awardDetails?.status ||
-  (application ? 'Submitted' : 'not_started');
+  // Read the actual status returned by getMyApplication.
+  // The backend returns application.status, not awardDetails.status.
+  const backendStatus = application?.status || 'not_started';
 
   const normalizedBackendStatus = String(backendStatus)
     .trim()
     .toLowerCase()
-    .replaceAll('_', '-');
+    .replaceAll('_', '-')
+    .replaceAll(' ', '-');
 
+  // Dashboard status labels and descriptions
   const statusConfiguration = {
     pending: {
       label: 'Submitted',
       progress: 'submitted',
-      description: 'Your application has been received and is awaiting document verification.',
+      description:
+        'Your application has been received and is awaiting document verification.',
     },
+
     submitted: {
       label: 'Submitted',
       progress: 'submitted',
-      description: 'Your application has been successfully submitted.',
+      description:
+        'Your application has been successfully submitted.',
     },
+
     verified: {
       label: 'Verified',
-      progress: 'verification',
-      description: 'Your application documents have been verified.',
+      progress: 'verified',
+      description:
+        'Your application documents have been verified and are awaiting board review.',
     },
+
     'board-approved': {
-      label: 'Board Review',
-      progress: 'board',
-      description: 'Your application has been approved at the board stage.',
+      label: 'Board Approved',
+      progress: 'board-approved',
+      description:
+        'The board has approved your bursary award. Payment is pending.',
     },
+
     approved: {
       label: 'Approved',
-      progress: 'approved',
-      description: 'Your bursary application has been approved.',
+      progress: 'board-approved',
+      description:
+        'Your bursary application has been approved.',
     },
+
     disbursed: {
       label: 'Disbursed',
       progress: 'disbursed',
-      description: 'Your bursary payment has been processed.',
+      description:
+        'Your bursary payment has been processed.',
     },
+
+    completed: {
+      label: 'Disbursed',
+      progress: 'disbursed',
+      description:
+        'Your bursary payment has been completed.',
+    },
+
     rejected: {
       label: 'Rejected',
       progress: 'rejected',
-      description: 'Your application was rejected. Please check the feedback provided.',
+      description:
+        'Your application was rejected. Please check the feedback provided.',
     },
   };
 
@@ -196,10 +217,12 @@ export default function ApplicantDashboard() {
       title: 'Applicant Dashboard',
       subtitle: 'Your bursary application at a glance.',
     },
+
     application: {
       title: 'My Application',
       subtitle: 'View and manage your bursary application.',
     },
+
     notifications: {
       title: 'Notifications',
       subtitle: 'Stay updated on your bursary application.',
@@ -235,7 +258,6 @@ export default function ApplicantDashboard() {
     setActivePage(page);
     setSidebarOpen(false);
 
-    // Refresh application when returning to overview
     if (page === 'overview') {
       fetchMyApplication();
     }

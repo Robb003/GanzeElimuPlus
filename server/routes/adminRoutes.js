@@ -57,11 +57,14 @@ router.post(
   executeBatchDisbursement
 );
 // TESTING ONLY  simulate a payment confirmation in development.
-router.post(
-  '/test-confirm-payment/:paymentReference',
-  protect,
-  authorizeRoles('admin'),
-  simulatePaymentConfirmation
-);
+// TESTING ONLY: Never expose payment simulation in production.
+if (process.env.NODE_ENV !== 'production') {
+  router.post(
+    '/test-confirm-payment/:paymentReference',
+    protect,
+    authorizeRoles('admin'),
+    simulatePaymentConfirmation
+  );
+}
 
 module.exports = router;
