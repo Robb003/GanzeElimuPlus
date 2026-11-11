@@ -1,5 +1,3 @@
-
-import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 
 import Home from './Pages/Home';
@@ -12,7 +10,8 @@ import ApplicantDashboard from './Pages/ApplicantDashboard';
 import MyApplicationDetails from './Pages/MyApplicationDetails';
 import Consent from './Pages/Consent';
 
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider } from './Context/authcontext';
+import ProtectedRoute from './Components/Auth/ProtectedRoute';
 
 const App = () => {
   return (
@@ -20,13 +19,24 @@ const App = () => {
       <Navbar />
 
       <Routes>
+        {/* Public routes */}
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/privacy-notice" element={<Consent />} />
-        <Route path="/applicant-dashboard" element={<ApplicantDashboard />} />
-        <Route path="/my-application" element={<MyApplicationDetails />} />
+
+        {/* Applicant-only routes */}
+        <Route element={<ProtectedRoute allowedRoles={['applicant']} />}>
+          <Route
+            path="/applicant-dashboard"
+            element={<ApplicantDashboard />}
+          />
+          <Route
+            path="/my-application"
+            element={<MyApplicationDetails />}
+          />
+        </Route>
       </Routes>
 
       <Footer />

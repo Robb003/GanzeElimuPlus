@@ -1,5 +1,4 @@
 
-import React from 'react';
 
 const stages = [
   { id: 'submitted', label: 'Application Submitted' },

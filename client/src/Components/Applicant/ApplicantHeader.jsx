@@ -1,5 +1,4 @@
 
-import React from 'react';
 
 export default function ApplicantHeader({
   title = 'Applicant Dashboard',

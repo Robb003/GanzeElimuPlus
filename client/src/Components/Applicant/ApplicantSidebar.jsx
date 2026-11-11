@@ -1,5 +1,4 @@
 
-import React from 'react';
 
 const navigationItems = [
   { id: 'overview', label: 'Overview', icon: '⌂' },

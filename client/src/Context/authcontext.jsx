@@ -1,10 +1,9 @@
-
 import {
-  createContext,
-  useContext,
   useEffect,
   useState,
 } from 'react';
+
+import AuthContext from './authContextValue';
 
 import {
   registerUser as registerUserService,
@@ -12,8 +11,6 @@ import {
 } from '../Service/api';
 
 import API from '../Service/api';
-
-const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
@@ -46,7 +43,7 @@ export const AuthProvider = ({ children }) => {
 
         setUser(response.data);
         localStorage.setItem('user', JSON.stringify(response.data));
-      } catch (error) {
+      } catch {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
 
@@ -108,18 +105,3 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
-
-// Access authentication from any component
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-
-  if (!context) {
-    throw new Error(
-      'useAuth must be used inside an AuthProvider.'
-    );
-  }
-
-  return context;
-};
-
-export default AuthContext;

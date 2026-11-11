@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getActiveBursaryCycle } from '../Service/api';
 
 export default function ApplicationCountdown() {

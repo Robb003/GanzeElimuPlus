@@ -1,6 +1,7 @@
 
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../Context/useAuth';
 
 import ApplicantSidebar from '../Components/Applicant/ApplicantSidebar';
 import ApplicantHeader from '../Components/Applicant/ApplicantHeader';
@@ -17,6 +18,7 @@ import {
 
 export default function ApplicantDashboard() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const [activePage, setActivePage] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -40,55 +42,78 @@ export default function ApplicantDashboard() {
 
   const notifications = [];
 
-  // Fetch the logged-in applicant's application
+  // Fetch application data without directly updating React state
   const fetchMyApplication = useCallback(async () => {
     try {
-      setApplicationLoading(true);
-      setApplicationError('');
-
       const response = await getMyApplicationDetails();
 
-      // Axios normally returns the API body inside response.data.
       const responseData = response?.data ?? response;
 
-      // Backend returns:
-      // { message: "...", application: { status: "...", ... } }
       const applicationData =
         responseData?.application ??
         responseData?.data?.application ??
         responseData?.data ??
         null;
 
-      setApplication(
-        applicationData?.application ?? applicationData
-      );
-
+      return {
+        application: applicationData?.application ?? applicationData,
+        error: '',
+      };
     } catch (error) {
       if (error.response?.status === 404) {
-        setApplication(null);
-        setApplicationError('');
-      } else {
-        console.error('Error fetching applicant application:', error);
-
-        setApplicationError(
-          error.response?.data?.message ||
-          'Unable to retrieve your application information.'
-        );
+        return {
+          application: null,
+          error: '',
+        };
       }
-    } finally {
-      setApplicationLoading(false);
+
+      console.error('Error fetching applicant application:', error);
+
+      return {
+        application: null,
+        error:
+          error.response?.data?.message ||
+          'Unable to retrieve your application information.',
+      };
     }
   }, []);
 
-  // Fetch application when dashboard loads
+  // Load application when the dashboard first opens
   useEffect(() => {
-    fetchMyApplication();
+    let cancelled = false;
+
+    const loadApplication = async () => {
+      const result = await fetchMyApplication();
+
+      if (!cancelled) {
+        setApplication(result.application);
+        setApplicationError(result.error);
+        setApplicationLoading(false);
+      }
+    };
+
+    loadApplication();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchMyApplication]);
+
+  // Refresh application when requested
+  const refreshMyApplication = useCallback(async () => {
+    const result = await fetchMyApplication();
+
+    setApplication(result.application);
+    setApplicationError(result.error);
+    setApplicationLoading(false);
   }, [fetchMyApplication]);
 
   // Refresh application when user returns to the browser tab
   useEffect(() => {
     const handleWindowFocus = () => {
-      fetchMyApplication();
+      setApplicationLoading(true);
+      setApplicationError('');
+      refreshMyApplication();
     };
 
     window.addEventListener('focus', handleWindowFocus);
@@ -96,7 +121,7 @@ export default function ApplicantDashboard() {
     return () => {
       window.removeEventListener('focus', handleWindowFocus);
     };
-  }, [fetchMyApplication]);
+  }, [refreshMyApplication]);
 
   // Fetch the active bursary cycle
   useEffect(() => {
@@ -249,8 +274,7 @@ export default function ApplicantDashboard() {
   }
 
   function handleLogout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    logout();
     navigate('/login');
   }
 
@@ -259,7 +283,9 @@ export default function ApplicantDashboard() {
     setSidebarOpen(false);
 
     if (page === 'overview') {
-      fetchMyApplication();
+      setApplicationLoading(true);
+      setApplicationError('');
+      refreshMyApplication();
     }
   }
 
@@ -478,7 +504,11 @@ export default function ApplicantDashboard() {
 
                 <button
                   type="button"
-                  onClick={fetchMyApplication}
+                  onClick={() => {
+                    setApplicationLoading(true);
+                    setApplicationError('');
+                    refreshMyApplication();
+                  }}
                   className="mt-2 text-sm font-semibold text-red-800 underline"
                 >
                   Try again
