@@ -7,12 +7,16 @@ const authRoutes = require('./routes/authRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const privacyRoute = require('./routes/privacyRoute');
+const { generalLimiter } = require('./middleware/rateLimitMiddleware');
 
 const app = express();
 
 // GLOBAL MIDDLEWARE
 app.use(cors());
 app.use(express.json());
+
+// GENERAL API RATE LIMITING
+app.use('/api', generalLimiter);
 
 // MOUNT API ROUTES
 app.use('/api/auth', authRoutes);

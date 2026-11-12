@@ -1,18 +1,26 @@
 const express = require('express');
 const router = express.Router();
-const { registerUser, loginUser, getUserProfile } = require('../controllers/authController');
+
+const {
+  registerUser,
+  loginUser,
+  getUserProfile
+} = require('../controllers/authController');
+
 const { protect } = require('../middleware/authMiddleware');
 
-// Public Registration Gate
-// Endpoint: POST /api/auth/register
-router.post('/register', registerUser);
+const {
+  loginLimiter,
+  registrationLimiter
+} = require('../middleware/rateLimitMiddleware');
 
-// Public Login Gate
-// Endpoint: POST /api/auth/login
-router.post('/login', loginUser);
+// PUBLIC REGISTRATION
+router.post('/register', registrationLimiter, registerUser);
 
-// Secure Profile Entry (Requires a valid JWT token log)
-// Endpoint: GET /api/auth/profile
+// PUBLIC LOGIN
+router.post('/login', loginLimiter, loginUser);
+
+// PROTECTED USER PROFILE
 router.get('/profile', protect, getUserProfile);
 
 module.exports = router;

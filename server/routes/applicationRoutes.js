@@ -21,6 +21,9 @@ const {
 } = require('../middleware/authMiddleware');
 
 const Transaction = require('../models/Transaction');
+const {
+  applicationSubmissionLimiter
+} = require('../middleware/rateLimitMiddleware');
 
 // APPLICANT GATEWAY
 // POST /api/applications/submit
@@ -30,6 +33,7 @@ router.post(
   '/submit',
   protect,
   authorizeRoles('applicant'),
+  applicationSubmissionLimiter,
   checkApplicationWindow,
   uploadApplicationDocuments,
   submitApplication

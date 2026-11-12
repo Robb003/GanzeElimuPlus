@@ -25,6 +25,14 @@ const { MongoMemoryServer } = require('mongodb-memory-server');
 const app = require('../app');
 const User = require('../models/User');
 
+// RATE LIMITER IMPORTS FOR TEST ISOLATION
+const {
+  generalLimiter,
+  loginLimiter,
+  registrationLimiter,
+  applicationSubmissionLimiter
+} = require('../middleware/rateLimitMiddleware');
+
 let mongoServer;
 
 jest.setTimeout(600000);
@@ -81,12 +89,28 @@ describe('ElimuPlus Authentication Security Tests', () => {
     });
   });
 
-  // Clear test records before each test.
+  // ----------------------------------------------------------
+  // TEST ISOLATION
+  // ----------------------------------------------------------
+
   beforeEach(async () => {
+    // Clear test users from the temporary database.
     await User.deleteMany({});
+
+    // Reset rate-limit counters for the local Supertest client.
+    // This prevents one test from affecting another test.
+    const testIp = '127.0.0.1';
+
+    generalLimiter.resetKey(testIp);
+    loginLimiter.resetKey(testIp);
+    registrationLimiter.resetKey(testIp);
+    applicationSubmissionLimiter.resetKey(testIp);
   });
 
-  // Disconnect and stop the temporary database.
+  // ----------------------------------------------------------
+  // DATABASE CLEANUP
+  // ----------------------------------------------------------
+
   afterAll(async () => {
     if (mongoose.connection.readyState !== 0) {
       await mongoose.disconnect();
