@@ -6,6 +6,7 @@ const School = require('../models/School');
 const Transaction = require('../models/Transaction');
 const Period = require('../models/Period');
 const AuditLog = require('../models/AuditLog');
+const cache = require('../utils/cache');
 // 0. CREATE A SCHOOL (ADMIN ONLY)
 exports.createSchool = async (req, res) => {
   try {
@@ -366,12 +367,18 @@ exports.configureBursaryCycle = async (req, res) => {
     // could configure cycles concurrently.
     await Period.updateMany({}, { isActive: false });
 
+    // Remove the old cached cycle immediately.
+    cache.del('activeBursaryCycle');
+
     const newPeriod = await Period.create({
       cycleName: cycleName.trim(),
       openingDate: opening,
       closingDate: closing,
       isActive: true
     });
+
+    // Invalidate any temporary cache entry created during configuration.
+    cache.del('activeBursaryCycle');
 
     return res.status(201).json({
       message: 'Bursary cycle configured successfully.',
@@ -394,12 +401,18 @@ exports.configureBursaryCycle = async (req, res) => {
  */
 exports.getActiveBursaryCycle = async (req, res) => {
   try {
-        const period = await Period.findOne({
-           isActive: true
-       })
-      .select('cycleName openingDate closingDate isActive -_id')
-      .sort({ createdAt: -1 })
-      .lean();
+    let period = cache.get('activeBursaryCycle');
+
+    // Fetch from MongoDB only when the cache has no valid entry.
+    if (period === undefined) {
+      period = await Period.findOne({ isActive: true })
+        .select('cycleName openingDate closingDate isActive -_id')
+        .sort({ createdAt: -1 })
+        .lean();
+
+      // Cache the result, including null when no active cycle exists.
+      cache.set('activeBursaryCycle', period);
+    }
 
     // No active cycle has been configured.
     if (!period) {
