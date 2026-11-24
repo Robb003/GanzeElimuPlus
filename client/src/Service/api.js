@@ -100,4 +100,48 @@ export const getMyPrivacyAcknowledgement = async () => {
   return response.data;
 };
 
+//Get submitted application
+
+// ========================================
+// CLERK API FUNCTIONS
+// ========================================
+
+// Fetch applications awaiting clerk review
+export const getReviewQueue = async () => {
+  const response = await API.get(
+    '/applications/review-queue'
+  );
+
+  return response.data;
+};
+
+// Verify or reject an application
+export const processVerification = async (
+  applicationId,
+  payload
+) => {
+  const response = await API.put(
+    `/applications/${applicationId}/verify`,
+    payload
+  );
+
+  return response.data;
+};
+
+// Retrieve an application document securely
+export const fetchApplicationDocument = async (
+  applicationId,
+  documentType
+) => {
+  const response = await API.get(
+    `/applications/${applicationId}/documents/${documentType}`,
+    {
+      responseType: 'blob',
+    }
+  );
+
+  return response.data;
+};
+
+
 export default API;

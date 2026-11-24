@@ -8,7 +8,8 @@ const {
   getReviewQueue,
   processVerification,
   approveApplication,
-  getBoardReviewQueue
+  getBoardReviewQueue,
+  getApplicationDocument
 } = require('../controllers/applicationController');
 const {
   uploadApplicationDocuments,
@@ -64,6 +65,14 @@ router.put(
   protect,
   authorizeRoles('clerk'),
   processVerification
+);
+// PRIVATE DOCUMENT PREVIEW
+// Only clerks and admins can retrieve application documents.
+router.get(
+  '/:id/documents/:documentType',
+  protect,
+  authorizeRoles('clerk', 'admin'),
+  getApplicationDocument
 );
 router.get(
   '/board-queue',

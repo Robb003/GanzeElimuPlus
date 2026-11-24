@@ -4,7 +4,9 @@ const Application = require('../models/Application');
 const AuditLog = require('../models/AuditLog');
 const { randomUUID } = require('crypto');
 const calculateProposedAward = require('../utils/awardCalculator');
-const cloudinary = require('../config/cloudinary');
+const cloudinary = require('../Config/cloudinary');
+const { Readable } = require('stream');
+const { pipeline } = require('stream/promises');
 
 // ============================================================
 // CONSTANTS
@@ -506,7 +508,7 @@ exports.getReviewQueue = async (req, res) => {
       .lean();
 
     const queue = applications.map((application) => ({
-      id: application._id,
+      _id: application._id,
       applicationNumber: application.applicationNumber,
       status: application.awardDetails.status,
       submittedAt: application.createdAt,
@@ -906,5 +908,174 @@ exports.approveApplication = async (req, res) => {
 
   } finally {
     await session.endSession();
+  }
+};
+// ============================================================
+// PRIVATE APPLICATION DOCUMENT PREVIEW
+// ============================================================
+
+// GET /api/applications/:id/documents/:documentType
+// Only authorized clerks and admins can retrieve private PDFs.
+// Cloudinary signed URLs are never returned to the client.
+
+exports.getApplicationDocument = async (req, res) => {
+  try {
+    const { id, documentType } = req.params;
+
+    // Validate the application identifier.
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({
+        message: 'Invalid application identifier.'
+      });
+    }
+
+    // Only permit the five predefined document types.
+    if (!DOCUMENT_TYPES.includes(documentType)) {
+      return res.status(400).json({
+        message: 'Invalid document type.'
+      });
+    }
+
+    // Retrieve only the document metadata required for this operation.
+    const application = await Application.findById(id)
+      .select('documents')
+      .lean();
+
+    if (!application) {
+      return res.status(404).json({
+        message: 'Application not found.'
+      });
+    }
+
+    const document = application.documents?.[documentType];
+
+    if (
+      !document ||
+      !document.publicId ||
+      document.resourceType !== 'raw' ||
+      document.format !== 'pdf'
+    ) {
+      return res.status(404).json({
+        message: 'Requested document was not found.'
+      });
+    }
+
+    // Generate a short-lived private Cloudinary download URL.
+    // Never send this URL to the frontend or log it.
+    const expiresAt = Math.floor(Date.now() / 1000) + 60;
+
+    const downloadUrl = cloudinary.utils.private_download_url(
+      document.publicId,
+      'pdf',
+      {
+        resource_type: 'raw',
+        type: 'authenticated',
+        expires_at: expiresAt
+      }
+    );
+
+    // Retrieve the PDF on the server.
+    const cloudinaryResponse = await fetch(downloadUrl, {
+      redirect: 'error'
+    });
+
+    if (!cloudinaryResponse.ok || !cloudinaryResponse.body) {
+      return res.status(502).json({
+        message: 'Unable to retrieve the private document.'
+      });
+    }
+
+    // Accept only PDF or generic binary content.
+    const contentType = cloudinaryResponse.headers
+      .get('content-type')
+      ?.split(';')[0]
+      .trim()
+      .toLowerCase();
+
+    if (
+      !['application/pdf', 'application/octet-stream'].includes(contentType)
+    ) {
+      await cloudinaryResponse.body.cancel();
+
+      return res.status(502).json({
+        message: 'The document provider returned an invalid file.'
+      });
+    }
+	    // Verify the actual file signature before sending anything to the client.
+    const reader = cloudinaryResponse.body.getReader();
+
+    const initialChunks = [];
+    let initialBytes = 0;
+
+    // Read enough bytes to inspect the five-byte PDF signature.
+    while (initialBytes < 5) {
+      const { done, value } = await reader.read();
+
+      if (done) break;
+
+      const chunk = Buffer.from(value);
+
+      initialChunks.push(chunk);
+      initialBytes += chunk.length;
+    }
+
+    const initialBuffer = Buffer.concat(initialChunks, initialBytes);
+
+    if (initialBuffer.subarray(0, 5).toString('ascii') !== '%PDF-') {
+      await reader.cancel();
+
+      return res.status(502).json({
+        message: 'The document provider returned an invalid file.'
+      });
+    }
+
+    // Restore the inspected bytes and continue streaming the remaining PDF.
+    const pdfStream = Readable.from((async function* () {
+      for (const chunk of initialChunks) {
+        yield chunk;
+      }
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) break;
+
+        yield Buffer.from(value);
+      }
+    })());
+
+    // Secure response headers.
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename="${documentType}.pdf"`
+    );
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+    res.setHeader('Pragma', 'no-cache');
+
+    const contentLength = cloudinaryResponse.headers.get('content-length');
+
+    if (contentLength && /^\d+$/.test(contentLength)) {
+      res.setHeader('Content-Length', contentLength);
+    }
+
+    // Stream the PDF directly to the authenticated client.
+        await pipeline(pdfStream, res);
+  } catch (error) {
+
+    console.error(
+      'Private document retrieval failed:',
+      error.name
+    );
+
+    if (res.headersSent || res.destroyed) {
+      res.destroy();
+      return;
+    }
+
+    return res.status(502).json({
+      message: 'Unable to retrieve the private document.'
+    });
   }
 };

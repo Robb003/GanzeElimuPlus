@@ -7,6 +7,7 @@ import About from './Pages/About';
 import Register from './Pages/Register';
 import Login from './Pages/Login';
 import ApplicantDashboard from './Pages/ApplicantDashboard';
+import ClerkDashboard from './Pages/ClerkDashboard';
 import MyApplicationDetails from './Pages/MyApplicationDetails';
 import Consent from './Pages/Consent';
 
@@ -35,6 +36,13 @@ const App = () => {
           <Route
             path="/my-application"
             element={<MyApplicationDetails />}
+          />
+        </Route>
+        {/* Clerk-only routes */}
+         <Route element={<ProtectedRoute allowedRoles={['clerk']} />}>
+          <Route
+            path="/clerk-dashboard"
+            element={<ClerkDashboard />}
           />
         </Route>
       </Routes>
